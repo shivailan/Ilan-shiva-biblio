@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import "./globals.css"; // Assure-toi que ce fichier existe ou commente cette ligne
 
 export const metadata: Metadata = {
   title: "Bibliothèque - Ilan & Shiva",
