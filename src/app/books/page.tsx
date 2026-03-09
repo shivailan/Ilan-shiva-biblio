@@ -1,27 +1,24 @@
 export const revalidate = 0;
 import BorrowButton from "@/app/books/BorrowButton";
 import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers"; // Pour lire les cookies sécurisés
 
 export default async function BooksPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
-  // 1. On récupère l'ID utilisateur depuis le cookie (Server Side)
-  const cookieStore = await cookies();
-  const userId = cookieStore.get("user_id")?.value; 
-
   const params = await searchParams;
   const query = params.q || "";
 
+  // RÉCUPÉRATION DIRECTE (Plus rapide, plus sûr, validé par le TP)
   const books = await prisma.book.findMany({
     where: {
       OR: [
-        { title: { contains: query } },
+        { title: { contains: query } }, // Filtre simple pour la recherche 
         { author: { contains: query } },
       ],
     },
+    orderBy: { title: "asc" },
   });
 
   return (
@@ -65,12 +62,13 @@ export default async function BooksPage({
                   ISBN {book.isbn}
                 </div>
                 
-{/* Dans ton boucle books.map, remplace la ligne du bouton par celle-ci : */}
-{book.available ? (
-  <BorrowButton bookId={book.id} userId={userId} /> 
-) : (
-  <button disabled className="...">Indisponible</button>
-)}
+                {book.available ? (
+                  <BorrowButton bookId={book.id} />
+                ) : (
+                  <button disabled className="w-full bg-slate-50 text-slate-300 py-4 rounded-2xl cursor-not-allowed font-bold text-sm">
+                    Indisponible
+                  </button>
+                )}
               </div>
             </div>
           ))}
