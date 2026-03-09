@@ -1,3 +1,4 @@
+export const revalidate = 0;
 // 1. AJOUT DE L'IMPORT (Très important)
 import BorrowButton from "@/app/books/BorrowButton";
 
