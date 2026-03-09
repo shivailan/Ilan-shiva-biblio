@@ -1,13 +1,18 @@
 import { Inter } from "next/font/google";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import Script from "next/script";
-import "./globals.css";
-// 1. On importe le menu utilisateur dynamique
 import UserMenu from "./UserMenu";
+import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Récupération sécurisée des cookies côté serveur (exigé par le sujet)
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+  const userName = cookieStore.get("user_name")?.value;
+
   return (
     <html lang="fr">
       <head>
@@ -24,14 +29,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Link>
             
             <div className="flex items-center gap-8">
-              {/* Liens de navigation (cachés sur mobile) */}
+              {/* Liens de navigation (Server Components) */}
               <div className="hidden md:flex gap-6 text-sm font-medium text-slate-600">
                 <Link href="/books" className="hover:text-blue-600 transition-colors">Catalogue</Link>
                 <Link href="/my-borrowings" className="hover:text-blue-600 transition-colors">Mes Emprunts</Link>
               </div>
 
-              {/* 2. APPEL DU COMPOSANT DYNAMIQUE (Gère Connexion / Inscription / Logout) */}
-              <UserMenu />
+              {/* APPEL DU COMPOSANT DYNAMIQUE 
+                  On lui passe l'ID et le Nom récupérés des cookies HttpOnly 
+              */}
+              <UserMenu userId={userId} userName={userName} />
             </div>
           </div>
         </nav>
@@ -41,9 +48,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {children}
         </main>
 
-        {/* Footer minimaliste */}
+        {/* Footer minimaliste exigé pour le rendu */}
         <footer className="py-8 text-center text-slate-400 text-[10px] border-t border-slate-100 bg-white">
-          © 2026 BiblioMaster — Projet Master Digital
+          © 2026 BiblioMaster — Projet Master Digital [cite: 1]
         </footer>
       </body>
     </html>

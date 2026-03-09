@@ -1,7 +1,17 @@
 "use server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+
+export async function handleLogout() {
+  const cookieStore = await cookies();
+  cookieStore.delete("access_token");
+  cookieStore.delete("refresh_token");
+  cookieStore.delete("user_id");
+  cookieStore.delete("user_name");
+  redirect("/login");
+}
 
 export async function handleSignup(formData: FormData) {
   const email = formData.get("email") as string;
