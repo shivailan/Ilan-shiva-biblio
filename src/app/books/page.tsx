@@ -1,20 +1,24 @@
 export const revalidate = 0;
 import BorrowButton from "@/app/books/BorrowButton";
 import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers"; //
 
 export default async function BooksPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
+  // 1. On récupère le userId depuis le cookie (Server Side)
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+
   const params = await searchParams;
   const query = params.q || "";
 
-  // RÉCUPÉRATION DIRECTE (Plus rapide, plus sûr, validé par le TP)
   const books = await prisma.book.findMany({
     where: {
       OR: [
-        { title: { contains: query } }, // Filtre simple pour la recherche 
+        { title: { contains: query } },
         { author: { contains: query } },
       ],
     },
@@ -54,7 +58,7 @@ export default async function BooksPage({
                   </span>
                 </div>
                 <h2 className="text-2xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-tight">{book.title}</h2>
-                <p className="text-slate-400 italic mt-2 italic">de {book.author}</p>
+                <p className="text-slate-400 italic mt-2">de {book.author}</p>
               </div>
 
               <div className="mt-8 space-y-4">
@@ -62,11 +66,12 @@ export default async function BooksPage({
                   ISBN {book.isbn}
                 </div>
                 
+                {/* 2. On passe le userId au bouton. S'il est présent, le bouton se débloque */}
                 {book.available ? (
-                  <BorrowButton bookId={book.id} />
+                  <BorrowButton bookId={book.id} userId={userId} />
                 ) : (
                   <button disabled className="w-full bg-slate-50 text-slate-300 py-4 rounded-2xl cursor-not-allowed font-bold text-sm">
-                    Indisponible
+                    Déjà emprunté
                   </button>
                 )}
               </div>

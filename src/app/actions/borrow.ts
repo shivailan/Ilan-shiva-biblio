@@ -1,32 +1,40 @@
 "use server";
+
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 
-export async function borrowBook(bookId: string, userId: string) {
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + 14); // Règle : +14 jours
+export async function handleBorrowAction(bookId: string) {
+  const cookieStore = await cookies();
+  const userId = cookieStore.get("user_id")?.value;
+
+  if (!userId) return { error: "Vous devez être connecté." };
 
   try {
-    // Utilisation d'une transaction Prisma pour garantir l'intégrité
+    // Vérification de la limite de 3 livres (Règle métier du TP)
+    const count = await prisma.borrowing.count({
+      where: { userId, returnedAt: null }
+    });
+    if (count >= 3) return { error: "Vous avez déjà 3 livres en cours !" };
+
+    // Transaction : on crée l'emprunt et on met le livre à 'indisponible'
     await prisma.$transaction([
-      // 1. Créer l'emprunt
       prisma.borrowing.create({
         data: {
-          bookId,
           userId,
-          dueDate,
-        },
+          bookId,
+          dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // J+14
+        }
       }),
-      // 2. Marquer le livre comme indisponible
       prisma.book.update({
         where: { id: bookId },
-        data: { available: false },
-      }),
+        data: { available: false }
+      })
     ]);
 
     revalidatePath("/books");
     return { success: true };
-  } catch (error) {
-    return { error: "Impossible d'emprunter ce livre." };
+  } catch (e) {
+    return { error: "Erreur lors de l'emprunt." };
   }
 }
