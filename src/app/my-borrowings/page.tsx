@@ -1,51 +1,49 @@
 import { prisma } from "@/lib/prisma";
+import ReturnButton from "./ReturnButton";
 
 export default async function MyBorrowingsPage() {
-  // Simuler l'utilisateur connecté (Prends le premier de la base pour le TP)
+  // On récupère ton utilisateur test (le même ID que pour l'emprunt)
   const user = await prisma.user.findFirst();
-  
-  if (!user) return <div className="p-8">Utilisateur non trouvé. Inscrivez-vous !</div>;
 
-  // On récupère les emprunts NON rendus avec les infos du livre
-  const borrowings = await prisma.borrowing.findMany({
+  if (!user) return <p className="p-10">Utilisateur non trouvé.</p>;
+
+  const activeBorrowings = await prisma.borrowing.findMany({
     where: { 
       userId: user.id,
-      returnedAt: null // Filtrer uniquement ce qui n'est pas encore rendu
+      returnedAt: null // On ne montre que ceux qui n'ont pas encore été rendus
     },
-    include: {
-      book: true // Jointure pour avoir le titre et l'auteur
-    }
+    include: { book: true },
   });
 
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-6">📚 Mes Emprunts</h1>
+    <div className="p-8 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-bold mb-8 text-blue-900">📚 Mes Emprunts en cours</h1>
       
-      {borrowings.length === 0 ? (
-        <p className="text-gray-500">Vous n'avez aucun livre en cours.</p>
+      {activeBorrowings.length === 0 ? (
+        <div className="bg-gray-100 p-10 rounded-xl text-center text-gray-500">
+          Vous n'avez aucun livre à rendre pour le moment.
+        </div>
       ) : (
-        <div className="space-y-4">
-          {borrowings.map((b) => (
-            <div key={b.id} className="border p-4 rounded-lg bg-blue-50 flex justify-between items-center">
+        <div className="grid gap-4">
+          {activeBorrowings.map((b) => (
+            <div key={b.id} className="bg-white border p-6 rounded-xl shadow-sm flex justify-between items-center">
               <div>
-                <h2 className="font-bold text-lg">{b.book.title}</h2>
-                <p className="text-sm text-gray-600">À rendre pour le : 
-                  <span className="text-red-600 font-bold ml-1">
-                    {new Date(b.dueDate).toLocaleDateString('fr-FR')}
-                  </span>
+                <h2 className="text-xl font-bold text-gray-800">{b.book.title}</h2>
+                <p className="text-gray-500 italic">de {b.book.author}</p>
+                <p className="mt-2 text-sm">
+                  ⏳ À rendre avant le : <span className="font-bold text-red-600">{new Date(b.dueDate).toLocaleDateString('fr-FR')}</span>
                 </p>
               </div>
               
-              <button 
-                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
-                // Prochaine étape : Ajouter l'action pour RENDRE le livre
-              >
-                Rendre
-              </button>
+              <ReturnButton borrowingId={b.id} />
             </div>
           ))}
         </div>
       )}
+      
+      <div className="mt-8">
+        <a href="/books" className="text-blue-600 hover:underline">← Retourner au catalogue</a>
+      </div>
     </div>
   );
 }
