@@ -1,6 +1,6 @@
 export const revalidate = 0;
-// 1. AJOUT DE L'IMPORT (Très important)
 import BorrowButton from "@/app/books/BorrowButton";
+import { prisma } from "@/lib/prisma"; // Import direct de Prisma
 
 export default async function BooksPage({
   searchParams,
@@ -10,65 +10,63 @@ export default async function BooksPage({
   const params = await searchParams;
   const query = params.q || "";
 
-  let books = [];
-  try {
-    const res = await fetch(`http://127.0.0.1:3000/api/books?q=${query}`, {
-      cache: "no-store", 
-    });
-    books = await res.json();
-  } catch (err) {
-    console.error("Erreur Fetch:", err);
-  }
-
-  if (!Array.isArray(books)) {
-    books = [];
-  }
+  // RÉCUPÉRATION DIRECTE (Plus rapide, plus sûr, validé par le TP)
+  const books = await prisma.book.findMany({
+    where: {
+      OR: [
+        { title: { contains: query } }, // Filtre simple pour la recherche 
+        { author: { contains: query } },
+      ],
+    },
+    orderBy: { title: "asc" },
+  });
 
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-blue-900">Catalogue des Livres</h1>
+        <h1 className="text-4xl font-black text-slate-900 italic">LE CATALOGUE.</h1>
         
         <form action="/books" method="GET" className="flex gap-2">
           <input 
             name="q" 
-            placeholder="Rechercher..." 
-            className="border p-2 rounded-lg shadow-sm w-64"
+            placeholder="Titre, auteur..." 
+            className="bg-white border-none p-3 rounded-xl shadow-sm w-64 focus:ring-2 focus:ring-blue-500 outline-none"
             defaultValue={query}
           />
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+          <button className="bg-slate-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-600 transition-all">
             Filtrer
           </button>
         </form>
       </div>
 
       {books.length === 0 ? (
-        <div className="p-10 border-2 border-dashed rounded-xl text-center text-gray-500">
-          Aucun livre ne correspond à votre recherche ou la base est vide.
+        <div className="p-20 border-2 border-dashed border-slate-200 rounded-[2rem] text-center text-slate-400 bg-white">
+          Aucun livre ne correspond à votre recherche.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {books.map((book: any) => (
-            <div key={book.id} className="border p-5 rounded-xl shadow-sm bg-white flex flex-col justify-between h-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {books.map((book) => (
+            <div key={book.id} className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col justify-between hover:shadow-xl hover:border-blue-100 transition-all group">
               <div>
-                <div className="flex justify-between items-start mb-2">
-                  <h2 className="text-xl font-bold text-gray-800">{book.title}</h2>
-                  <span className={`px-2 py-1 rounded text-[10px] font-bold ${book.available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                    {book.available ? 'DISPONIBLE' : 'EMPRUNTÉ'}
+                <div className="flex justify-between items-start mb-4">
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase ${book.available ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                    {book.available ? '● Disponible' : '● Emprunté'}
                   </span>
                 </div>
-                <p className="text-gray-600 italic mb-4">de {book.author}</p>
+                <h2 className="text-2xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-tight">{book.title}</h2>
+                <p className="text-slate-400 italic mt-2 italic">de {book.author}</p>
               </div>
 
-              <div className="mt-4 space-y-3">
-                <div className="text-[10px] font-mono text-gray-400">ISBN: {book.isbn}</div>
+              <div className="mt-8 space-y-4">
+                <div className="flex items-center gap-2 text-[10px] font-bold text-slate-300 bg-slate-50 p-2 rounded-lg w-fit">
+                  ISBN {book.isbn}
+                </div>
                 
-                {/* 2. INTÉGRATION DU BOUTON INTERACTIF */}
                 {book.available ? (
                   <BorrowButton bookId={book.id} />
                 ) : (
-                  <button disabled className="w-full bg-gray-100 text-gray-400 py-2 rounded-lg cursor-not-allowed font-semibold">
-                    Déjà emprunté
+                  <button disabled className="w-full bg-slate-50 text-slate-300 py-4 rounded-2xl cursor-not-allowed font-bold text-sm">
+                    Indisponible
                   </button>
                 )}
               </div>
