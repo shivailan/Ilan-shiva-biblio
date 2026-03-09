@@ -11,10 +11,14 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
-    "@types/node": "25.3.5",
+    "@types/node": "^25.3.5",
     "@types/react": "19.2.14",
     "prisma": "^6.19.2",
-    "typescript": "5.9.3"
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "scripts": {
     "dev": "next dev",
