@@ -2,16 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --foreground-rgb: 15, 23, 42;
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 255, 255, 255;
+}
+
 body {
-  background-color: #f8fafc;
-  color: #1e293b;
-  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-}
-
-input {
-  outline: none;
-}
-
-button:active {
-  transform: scale(0.98);
+  color: rgb(var(--foreground-rgb));
+  background: white;
+  margin: 0;
+  padding: 0;
 }
